@@ -4,6 +4,11 @@ output:
   rolldown::scrollama_sidebar:
     number_sections: false
     self_contained: no
+knit: (function(input_file, encoding) {
+  out_dir <- 'docs';
+  rmarkdown::render(input_file,
+ encoding=encoding,
+ output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
 ---
 
 ```{r setup, include=FALSE}
@@ -123,7 +128,7 @@ distinct_anime <- tidy_anime %>%
   filter(row_number() == 1) %>% 
   head(50)
 
-images_src <- gtools::mixedsort(fs::dir_ls("media/images/"))
+images_src <- gtools::mixedsort(fs::dir_ls("docs/media/images/"))
 
 distinct_anime <- cbind(distinct_anime,  img_path = images_src)
 ```
