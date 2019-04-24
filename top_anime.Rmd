@@ -1,5 +1,6 @@
 ---
 title: "Top 50 Anime by Popularity"
+subtitle: "(As of Feb 9, 2019)"
 output:
   rolldown::scrollama_sidebar:
     number_sections: false
@@ -18,6 +19,10 @@ knitr::opts_chunk$set(echo = FALSE,
 ```
 
 ```{css}
+.subtitle {
+  font-size: 90%
+}
+
 .header, .sidebar{
   padding: 15px;
 }
@@ -74,6 +79,10 @@ library(rvest)
 tidy_anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv")
 
 page <- read_html("media/anime_page.html")
+
+anime_titles <- page %>% 
+  html_nodes(".fs14.fw-b") %>%
+  html_text()
 ```
 
 ```{r, eval = FALSE}
@@ -130,7 +139,12 @@ distinct_anime <- tidy_anime %>%
 
 images_src <- gtools::mixedsort(fs::dir_ls("docs/media/images/"))
 
-distinct_anime <- cbind(distinct_anime,  img_path = images_src)
+images <- data_frame(
+  name = anime_titles,
+  img_path = images_src
+)
+
+distinct_anime <- left_join(distinct_anime,  images)
 ```
 
 ```{r, results='asis'}
