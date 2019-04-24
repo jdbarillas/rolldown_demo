@@ -132,7 +132,7 @@ if (length(fs::dir_ls("media/images")) == 0) {
 
 ```{r}
 distinct_anime <- tidy_anime %>% 
-  arrange(desc(members)) %>% 
+  arrange(popularity) %>% 
   group_by(animeID) %>% 
   filter(row_number() == 1) %>% 
   head(50)
