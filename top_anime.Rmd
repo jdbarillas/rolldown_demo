@@ -1,0 +1,155 @@
+---
+title: "Top 50 Anime by Popularity"
+output:
+  rolldown::scrollama_sidebar:
+    number_sections: false
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      message = FALSE, 
+                      warning = FALSE)
+```
+
+```{css}
+.header, .sidebar{
+  padding: 15px;
+}
+
+.sidebar {
+  max-width: 70rem;
+}
+
+.exhibit {
+  border: 2px dotted;
+  background-color: rgba(204, 228, 244, 0.4);
+}
+
+body {
+  background-color: #fcf0e1;
+  color: #15425f;
+}
+
+.exhibit .figure {
+  width: 100%;
+  height: 100%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.exhibit .figure img {
+  width: 80%;
+  height: 90%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+}
+
+.caption {
+  font-weight: bold;
+  font-size: 110%;
+  text-align: center;
+  display: block;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.sidebar img, .sidebar .caption {
+  display: none;
+}
+```
+
+```{r data-setup}
+library(dplyr)
+library(rvest)
+
+tidy_anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv")
+
+page <- read_html("media/anime_page.html")
+```
+
+```{r, eval = FALSE}
+anime_pages <- page %>% 
+  html_nodes(".fs14.fw-b") %>% 
+  html_attr("href") 
+
+destfiles <- paste0("media/webpages/",
+                    1:length(anime_pages), "-", fs::path_file(anime_pages), 
+                    ".html")
+
+download_file <- function(url, destfiles) {
+  download.file(url = url, 
+                destfile = destfiles)
+  Sys.sleep(sample(seq(0,2,0.5), 1))
+}
+
+if (length(fs::dir_ls("media/webpages")) == 0) {
+purrr::walk2(.x = anime_pages, .y = destfiles,
+            ~download_file(url = .x, 
+                           destfiles = .y))
+}
+
+page_test <- "media/webpages/Death_Note.html"
+
+get_images <- function(page_path) {
+
+img_file <- paste0("media/images/", 
+                   fs::path_ext_remove(fs::path_file(page_path)), 
+                   ".jpeg")  
+  
+img_src <- page_path %>%
+  read_html() %>% 
+  html_nodes("img.ac") %>%
+  html_attr("src")
+
+download.file(url = img_src, destfile = img_file)
+Sys.sleep(sample(seq(0,2,0.5), 1))
+}
+
+if (length(fs::dir_ls("media/images")) == 0) {
+  purrr::walk(fs::dir_ls("media/webpages"),
+              ~get_images(page_path = .x))
+  }
+```
+
+
+```{r}
+distinct_anime <- tidy_anime %>% 
+  arrange(desc(members)) %>% 
+  group_by(animeID) %>% 
+  filter(row_number() == 1) %>% 
+  head(50)
+
+images_src <- gtools::mixedsort(fs::dir_ls("media/images/"))
+
+distinct_anime <- cbind(distinct_anime,  img_path = images_src)
+```
+
+```{r, results='asis'}
+rmarkdown_text = glue::glue_data(distinct_anime,
+"# {popularity} - {name}
+
+**(Added to personal list by {scales::comma(members)} members)** 
+
+* Type: {type}  
+* Source: {source} 
+* Episodes: {episodes}
+* Status: {status}
+* Score: {score}
+
+### Synopsis 
+
+{synopsis} 
+
+![{title_english} ({title_japanese})]({img_path})
+
+
+"
+)
+
+cat(rmarkdown_text, sep = "\n")
+```
+
